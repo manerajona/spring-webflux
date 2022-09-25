@@ -29,6 +29,6 @@ class PlanetHandlerV1(val service: PlanetService) {
 
     companion object Constants {
         const val PLANET_URI = "/v1/planets"
-        const val PLANET_ID_URI = PLANET_URI + "/{id}"
+        const val PLANET_ID_URI = "$PLANET_URI/{id}"
     }
 }
