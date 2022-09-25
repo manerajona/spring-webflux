@@ -4,16 +4,16 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Pattern
 
 data class JediRequest(
-    @NotBlank
-    @Pattern(regexp = "[a-zA-Z\\s\\-]+", message = "The name field must contain only text without numbers")
+    @field:NotBlank
+    @field:Pattern(regexp = "[a-zA-Z\\s\\-]+", message = "The name field must contain only text without numbers")
     val name: String,
-    @NotBlank
-    @Pattern(regexp = "[a-zA-Z\\s\\-]+", message = "The name field must contain only text without numbers")
+    @field:NotBlank
+    @field:Pattern(regexp = "[a-zA-Z\\s\\-]+", message = "The name field must contain only text without numbers")
     val gender: String,
-    @NotBlank
+    @field:NotBlank
     val birthYear: String,
-    @NotBlank
+    @field:NotBlank
     val planet: String,
-    @NotBlank
+    @field:NotBlank
     val url: String
 )

@@ -2,13 +2,17 @@ package com.github.manerajona.reactive.config.exception
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler
+import org.springframework.core.annotation.Order
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.data.util.Pair
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 
+@Component
+@Order(-2)
 class GlobalExceptionHandler(private val mapper: ObjectMapper) : ErrorWebExceptionHandler {
 
     override fun handle(serverWebExchange: ServerWebExchange, throwable: Throwable): Mono<Void> {
@@ -20,8 +24,8 @@ class GlobalExceptionHandler(private val mapper: ObjectMapper) : ErrorWebExcepti
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     listOf(
                         ErrorDetails(
-                            ErrorDetails.Enums.ErrorCode.HTTP_CLIENT_ERROR,
-                            ErrorDetails.Enums.ErrorCode.HTTP_CLIENT_ERROR.defaultMessage
+                            ErrorDetails.Enums.ErrorCode.INTERNAL_ERROR,
+                            ErrorDetails.Enums.ErrorCode.INTERNAL_ERROR.defaultMessage
                         )
                     )
                 )

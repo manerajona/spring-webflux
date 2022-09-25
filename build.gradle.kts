@@ -26,6 +26,8 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 	implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.11")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("javax.validation:validation-api:2.0.1.Final")
 	implementation("io.github.microutils:kotlin-logging-jvm:3.0.0")
 
 	compileOnly("org.mapstruct:mapstruct:1.5.2.Final")
