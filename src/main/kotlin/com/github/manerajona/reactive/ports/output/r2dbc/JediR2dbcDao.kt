@@ -11,7 +11,10 @@ import java.util.*
 
 @Profile("h2")
 @Component
-class JediR2dbcDao(val repository: JediR2dbcRepo, val mapper: JediR2dbcMapper) : JediRepo {
+class JediR2dbcDao(
+    val repository: JediR2dbcRepo,
+    val mapper: JediR2dbcMapper
+) : JediRepo {
 
     @Transactional
     override fun create(jedi: Jedi): Mono<UUID> =
@@ -47,5 +50,6 @@ class JediR2dbcDao(val repository: JediR2dbcRepo, val mapper: JediR2dbcMapper) :
             .map(mapper::jediTableToJedi)
 
     @Transactional
-    override fun delete(id: UUID): Mono<Void> = repository.deleteById(id)
+    override fun delete(id: UUID): Mono<Void> =
+        repository.deleteById(id)
 }

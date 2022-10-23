@@ -1,6 +1,7 @@
 package com.github.manerajona.reactive.config.exception
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.manerajona.reactive.config.exception.ErrorDetails.Enums
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler
 import org.springframework.core.annotation.Order
 import org.springframework.core.io.buffer.DataBuffer
@@ -13,10 +14,15 @@ import reactor.core.publisher.Mono
 
 @Component
 @Order(-2)
-class GlobalExceptionHandler(private val mapper: ObjectMapper) : ErrorWebExceptionHandler {
+class GlobalExceptionHandler(
+    private val mapper: ObjectMapper
+) : ErrorWebExceptionHandler {
 
-    override fun handle(serverWebExchange: ServerWebExchange, throwable: Throwable): Mono<Void> {
-        val pair =
+    override fun handle(
+        serverWebExchange: ServerWebExchange,
+        throwable: Throwable
+    ): Mono<Void> {
+        val pair: Pair<HttpStatus, List<ErrorDetails>> =
             if (throwable is ErrorDetailsException) {
                 Pair.of(throwable.status, throwable.errors)
             } else {
@@ -24,8 +30,8 @@ class GlobalExceptionHandler(private val mapper: ObjectMapper) : ErrorWebExcepti
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     listOf(
                         ErrorDetails(
-                            ErrorDetails.Enums.ErrorCode.INTERNAL_ERROR,
-                            ErrorDetails.Enums.ErrorCode.INTERNAL_ERROR.defaultMessage
+                            Enums.ErrorCode.INTERNAL_ERROR,
+                            Enums.ErrorCode.INTERNAL_ERROR.defaultMessage
                         )
                     )
                 )
@@ -33,15 +39,23 @@ class GlobalExceptionHandler(private val mapper: ObjectMapper) : ErrorWebExcepti
 
         serverWebExchange.response.statusCode = pair.first
         serverWebExchange.response.headers.contentType = MediaType.APPLICATION_JSON
-        return serverWebExchange.response.writeWith(getBody(serverWebExchange, pair.second))
+
+        return serverWebExchange.response.writeWith(
+            getBody(
+                serverWebExchange,
+                pair.second // list of errors
+            )
+        )
     }
 
-    private fun getBody(serverWebExchange: ServerWebExchange, errors: List<ErrorDetails>): Mono<DataBuffer> {
+    private fun getBody(
+        serverWebExchange: ServerWebExchange,
+        errors: List<ErrorDetails>
+    ): Mono<DataBuffer> {
         val dataBuffer = serverWebExchange.response
             .bufferFactory()
             .wrap(mapper.writeValueAsBytes(errors))
 
         return Mono.just(dataBuffer)
     }
-
 }

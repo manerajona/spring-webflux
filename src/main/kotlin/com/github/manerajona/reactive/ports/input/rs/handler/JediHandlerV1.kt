@@ -1,11 +1,13 @@
 package com.github.manerajona.reactive.ports.input.rs.handler
 
 import com.github.manerajona.reactive.config.exception.ErrorDetails
+import com.github.manerajona.reactive.config.exception.ErrorDetails.Enums
 import com.github.manerajona.reactive.config.exception.ErrorDetailsException
 import com.github.manerajona.reactive.core.model.Jedi
 import com.github.manerajona.reactive.core.usecase.JediService
 import com.github.manerajona.reactive.ports.input.rs.mapper.JediHandlerMapper
 import com.github.manerajona.reactive.ports.input.rs.request.JediRequest
+import com.github.manerajona.reactive.ports.input.rs.response.JediResponse
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -20,64 +22,94 @@ import java.util.*
 import java.util.stream.Collectors
 
 @Component
-class JediHandlerV1(val service: JediService, val mapper: JediHandlerMapper, val validator: Validator) {
+class JediHandlerV1(
+    val service: JediService,
+    val mapper: JediHandlerMapper,
+    val validator: Validator
+) {
 
-    private val logger = KotlinLogging.logger {}
+    private val log = KotlinLogging.logger {}
 
+    /**
+     * POST /v1/jedis
+     */
     fun createJedis(request: ServerRequest): Mono<ServerResponse> {
         val mono: Mono<Jedi> = request.bodyToMono(JediRequest::class.java)
             .doOnNext { validate(it) }
-            .map { mapper.createJediRequestToJedi(it) }
+            .map { mapper.jediRequestToJedi(it) }
 
         return mono.flatMap<Any>(service::createEntity)
             .flatMap { id ->
                 val location = UriComponentsBuilder
-                    .fromPath(request.path() + "/{id}")
+                    .fromPath("${request.path()}/{id}")
                     .build()
                     .expand(id)
                     .toUri()
 
                 ServerResponse.created(location).build()
-            }.doOnError { error -> logger.error(error.message, error) }
+            }.doOnError { error -> log.error(error.message, error) }
     }
 
+    /**
+     * GET /v1/jedis/:id
+     */
     fun getJedi(request: ServerRequest): Mono<ServerResponse> {
-        val id = UUID.fromString(request.pathVariable("id").trim { it <= ' ' })
+        val id = UUID.fromString(request.pathVariable("id"))
 
         return service.getByIdIfExists(id)
-            .flatMap { ServerResponse.ok().bodyValue(it) }
+            .flatMap {
+                val response = mapper.jediToJediResponse(it)
+                ServerResponse.ok().bodyValue(response)
+            }
             .switchIfEmpty(ServerResponse.notFound().build())
-            .doOnError { error -> logger.error(error.message, error) }
+            .doOnError { error -> log.error(error.message, error) }
     }
 
-    fun getJedis(ignored: ServerRequest?): Mono<ServerResponse> =
-        ServerResponse.ok().body(service.list, Jedi::class.java)
-            .doOnError { error -> logger.error(error.message, error) }
+    /**
+     * GET /v1/jedis
+     */
+    fun getJedis(ignored: ServerRequest?): Mono<ServerResponse> {
+        val response = service.list.map { mapper.jediToJediResponse(it) }
 
+        return ServerResponse.ok().body(response, JediResponse::class.java)
+            .doOnError { error -> log.error(error.message, error) }
+    }
+
+
+    /**
+     * PUT /v1/jedis/:id
+     */
     fun updateJedi(request: ServerRequest): Mono<ServerResponse> =
         request.bodyToMono(JediRequest::class.java)
             .doOnNext { validate(it) }
             .flatMap { jediRequest ->
-                val jedi: Jedi = mapper.createJediRequestToJedi(jediRequest)
-                val id = UUID.fromString(request.pathVariable("id").trim { it <= ' ' })
+                val jedi: Jedi = mapper.jediRequestToJedi(jediRequest)
+                val id = UUID.fromString(request.pathVariable("id"))
                 service.updateEntityIfExists(id, jedi)
             }.flatMap { jedi ->
                 Optional.ofNullable(jedi.id)
                     .map { ServerResponse.noContent().build() }
                     .orElse(ServerResponse.notFound().build())
-            }.doOnError { error -> logger.error(error.message, error) }
+            }.doOnError { error -> log.error(error.message, error) }
 
+    /**
+     * DELETE /v1/jedis/:id
+     */
     fun deleteJedi(request: ServerRequest): Mono<ServerResponse> {
-        val id = UUID.fromString(request.pathVariable("id").trim { it <= ' ' })
+        val id = UUID.fromString(request.pathVariable("id"))
 
         return service.deleteById(id)
             .flatMap { ServerResponse.noContent().build() }
             .switchIfEmpty(ServerResponse.noContent().build())
-            .doOnError { error -> logger.error(error.message, error) }
+            .doOnError { error -> log.error(error.message, error) }
     }
 
+    /**
+     * Validate Request Specification
+     */
     private fun <T> validate(dto: T) {
-        val result: BindingResult = BeanPropertyBindingResult(dto, dto!!::class.simpleName ?: "")
+        val className = dto!!::class.simpleName!!
+        val result: BindingResult = BeanPropertyBindingResult(dto, className)
 
         validator.validate(dto, result)
 
@@ -85,11 +117,11 @@ class JediHandlerV1(val service: JediService, val mapper: JediHandlerMapper, val
             val errors: List<ErrorDetails> = result.fieldErrors.stream()
                 .map { fieldError ->
                     ErrorDetails(
-                        ErrorDetails.Enums.ErrorCode.INVALID_FIELD_VALUE,
-                        fieldError.defaultMessage ?: ErrorDetails.Enums.ErrorCode.INVALID_FIELD_VALUE.defaultMessage,
+                        Enums.ErrorCode.INVALID_FIELD_VALUE,
+                        fieldError.defaultMessage ?: Enums.ErrorCode.INVALID_FIELD_VALUE.defaultMessage,
                         fieldError.field,
                         fieldError.rejectedValue,
-                        ErrorDetails.Enums.ErrorLocation.BODY
+                        Enums.ErrorLocation.BODY
                     )
                 }
                 .collect(Collectors.toList())

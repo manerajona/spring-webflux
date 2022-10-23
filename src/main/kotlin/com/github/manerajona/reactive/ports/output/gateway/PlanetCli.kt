@@ -1,6 +1,7 @@
 package com.github.manerajona.reactive.ports.output.gateway
 
 import com.github.manerajona.reactive.config.exception.ErrorDetails
+import com.github.manerajona.reactive.config.exception.ErrorDetails.Enums
 import com.github.manerajona.reactive.config.exception.ErrorDetailsException
 import com.github.manerajona.reactive.core.model.Planet
 import com.github.manerajona.reactive.core.repository.PlanetRepo
@@ -17,7 +18,10 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 @Component
-class PlanetCli(val webClient: WebClient, var mapper: PlanetCliMapper) : PlanetRepo {
+class PlanetCli(
+    val webClient: WebClient,
+    var mapper: PlanetCliMapper
+) : PlanetRepo {
 
     @Value("\${swapi.dev.planets.uri}")
     private lateinit var uri: String
@@ -33,7 +37,7 @@ class PlanetCli(val webClient: WebClient, var mapper: PlanetCliMapper) : PlanetR
                     HttpStatus.NOT_FOUND,
                     listOf(
                         ErrorDetails(
-                            ErrorDetails.Enums.ErrorCode.RESOURCE_NOT_FOUND,
+                            Enums.ErrorCode.RESOURCE_NOT_FOUND,
                             "Planet not found"
                         )
                     )

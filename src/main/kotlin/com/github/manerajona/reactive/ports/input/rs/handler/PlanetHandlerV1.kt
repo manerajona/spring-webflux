@@ -22,10 +22,9 @@ class PlanetHandlerV1(val service: PlanetService) {
             .doOnError { error -> logger.error(error.message, error) }
     }
 
-    fun getPlanets(ignored: ServerRequest?): Mono<ServerResponse> {
-        return ServerResponse.ok().body(service.list, Planet::class.java)
+    fun getPlanets(ignored: ServerRequest?): Mono<ServerResponse> =
+        ServerResponse.ok().body(service.list, Planet::class.java)
             .doOnError { error -> logger.error(error.message, error) }
-    }
 
     companion object Constants {
         const val PLANET_URI = "/v1/planets"
